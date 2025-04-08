@@ -1,0 +1,24 @@
+name: gldas_evaluation
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scipy
+  - requests
+  - pyyaml
+  - earthengine-api
+  - geemap
+  - geopandas
+  - ipykernel
+  - jupyter
+  - ipywidgets
+  - pip
+  - pip:
+      - hydrofunctions
+      - dataretrieval
+      - tqdm

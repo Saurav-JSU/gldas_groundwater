@@ -1,0 +1,33 @@
+# Study region
+region:
+  name: "Mississippi River Basin"
+  bounds:
+    lat_min: 29.0
+    lat_max: 49.0
+    lon_min: -98.0
+    lon_max: -80.0
+
+# Time period
+time:
+  start_date: "2003-01-01"
+  end_date: "2022-12-31"
+
+# USGS NWIS parameters
+usgs:
+  service: "groundwater"
+  site_status: "active"
+  min_data_points: 60  # At least 24 measurements (e.g., 2 years of monthly data)
+  parameter_code: "72019"  # Depth to water level, ft below land surface
+  max_sites: 50000  # Take the top 5000 sites by quality score
+
+# GLDAS parameters
+gldas:
+  collection: "NASA/GLDAS/V022/CLSM/G025/DA1D"
+  variable: "GWS_tavg"
+  scale_factor: 277.1  # 77.0153 * 3599.01 / 1000 (converted to meters)
+  project_id: "ee-sauravbhattarai1999"  # Google Earth Engine project ID
+
+# Analysis parameters
+analysis:
+  temporal_resolution: "monthly"
+  comparison_metrics: ["correlation", "rmse", "nse"]
