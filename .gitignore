@@ -1,23 +1,15 @@
-# Ignore data and results folders
-data/
-results/
+# Ignore only top-level data/ and results/ folders
+/data/
+/results/
 
-# Ignore system files
+# Don't ignore data folders inside other folders like src/
+/!src/data/
+
+# Common ignores
 .DS_Store
-*.swp
-*.swo
-*.tmp
-
-# Ignore Jupyter notebook checkpoints
-**/.ipynb_checkpoints/
-
-# Ignore Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Ignore virtual environments (if ever added)
-env/
-venv/
-.gldas_env/
+*.swo
+*.swp
+*.tmp
+**/.ipynb_checkpoints/
