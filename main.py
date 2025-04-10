@@ -296,6 +296,28 @@ def main():
             print("No metrics file found. Cannot perform spatial analysis.")
             return
         
+        # Load site metadata for coordinates
+        metadata_file = os.path.join(dirs['wells'], 'all_site_metrics.csv')
+        if os.path.exists(metadata_file):
+            metadata_df = pd.read_csv(metadata_file)
+            
+            # Ensure metrics_df has latitude and longitude
+            if 'latitude' not in metrics_df.columns or 'longitude' not in metrics_df.columns:
+                print("Adding coordinate information to metrics data...")
+                # Join metadata with metrics to get coordinates
+                metrics_df = pd.merge(
+                    metrics_df, 
+                    metadata_df[['site_no', 'latitude', 'longitude']], 
+                    on='site_no', 
+                    how='left'
+                )
+                
+                # Save updated metrics with coordinates
+                metrics_df.to_csv(metrics_file, index=False)
+        else:
+            print("No metadata file found with coordinates. Cannot perform spatial analysis.")
+            return
+        
         # Initialize spatial analyzer
         spatial_analyzer = SpatialAnalyzer()
         
