@@ -208,7 +208,146 @@ class VisualizationGenerator:
             plt.savefig(file_path, dpi=300, bbox_inches='tight')
         
         return fig
-    
+    def create_summary_metrics_plot(self, metrics_df, output_dir=None):
+        """Create summary plots of metrics across all sites."""
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import numpy as np
+        import os
+        
+        # Use output_dir from arguments if provided, otherwise use class attribute
+        if output_dir is None:
+            output_dir = self.output_dir
+        
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            
+        # Dictionary to store figures
+        figures = {}
+        
+        # Set up the style
+        plt.style.use('seaborn-v0_8-whitegrid')
+        
+        # 1. Histogram of correlation values
+        fig1, ax1 = plt.subplots(figsize=(10, 6))
+        sns.histplot(metrics_df['correlation'], kde=True, ax=ax1)
+        ax1.set_title('Distribution of Correlation Values', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Correlation', fontsize=12)
+        ax1.set_ylabel('Count', fontsize=12)
+        ax1.grid(True, alpha=0.3)
+        
+        # Add summary statistics
+        stats_text = (
+            f"Mean: {metrics_df['correlation'].mean():.3f}\n"
+            f"Median: {metrics_df['correlation'].median():.3f}\n"
+            f"Std Dev: {metrics_df['correlation'].std():.3f}\n"
+            f"N: {len(metrics_df)}"
+        )
+        ax1.text(0.02, 0.95, stats_text, transform=ax1.transAxes, fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'),
+                verticalalignment='top')
+        
+        plt.tight_layout()
+        if output_dir:
+            plt.savefig(os.path.join(output_dir, 'correlation_histogram.png'), dpi=300, bbox_inches='tight')
+        figures['correlation_histogram'] = fig1
+        
+        # 2. Histogram of RMSE values
+        fig2, ax2 = plt.subplots(figsize=(10, 6))
+        sns.histplot(metrics_df['rmse'], kde=True, ax=ax2)
+        ax2.set_title('Distribution of RMSE Values', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('RMSE', fontsize=12)
+        ax2.set_ylabel('Count', fontsize=12)
+        ax2.grid(True, alpha=0.3)
+        
+        stats_text = (
+            f"Mean: {metrics_df['rmse'].mean():.3f}\n"
+            f"Median: {metrics_df['rmse'].median():.3f}\n"
+            f"Std Dev: {metrics_df['rmse'].std():.3f}\n"
+            f"N: {len(metrics_df)}"
+        )
+        ax2.text(0.02, 0.95, stats_text, transform=ax2.transAxes, fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'),
+                verticalalignment='top')
+        
+        plt.tight_layout()
+        if output_dir:
+            plt.savefig(os.path.join(output_dir, 'rmse_histogram.png'), dpi=300, bbox_inches='tight')
+        figures['rmse_histogram'] = fig2
+        
+        # 3. Histogram of NSE values
+        fig3, ax3 = plt.subplots(figsize=(10, 6))
+        # Filter out extreme NSE values for better visualization
+        filtered_nse = metrics_df['nse'].copy()
+        filtered_nse = filtered_nse[filtered_nse > -5]  # Remove extreme negative values
+        
+        sns.histplot(filtered_nse, kde=True, ax=ax3)
+        ax3.set_title('Distribution of Nash-Sutcliffe Efficiency Values', fontsize=14, fontweight='bold')
+        ax3.set_xlabel('NSE', fontsize=12)
+        ax3.set_ylabel('Count', fontsize=12)
+        ax3.grid(True, alpha=0.3)
+        
+        stats_text = (
+            f"Mean: {metrics_df['nse'].mean():.3f}\n"
+            f"Median: {metrics_df['nse'].median():.3f}\n"
+            f"Std Dev: {metrics_df['nse'].std():.3f}\n"
+            f"N: {len(metrics_df)}"
+        )
+        ax3.text(0.02, 0.95, stats_text, transform=ax3.transAxes, fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'),
+                verticalalignment='top')
+        
+        plt.tight_layout()
+        if output_dir:
+            plt.savefig(os.path.join(output_dir, 'nse_histogram.png'), dpi=300, bbox_inches='tight')
+        figures['nse_histogram'] = fig3
+        
+        # 4. Scatter plot of correlation vs RMSE
+        fig4, ax4 = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(data=metrics_df, x='correlation', y='rmse', ax=ax4, alpha=0.6)
+        ax4.set_title('Correlation vs RMSE', fontsize=14, fontweight='bold')
+        ax4.set_xlabel('Correlation', fontsize=12)
+        ax4.set_ylabel('RMSE', fontsize=12)
+        ax4.grid(True, alpha=0.3)
+        
+        # Add correlation value between the two metrics
+        corr_val = metrics_df['correlation'].corr(metrics_df['rmse'])
+        ax4.text(0.02, 0.95, f"Correlation: {corr_val:.3f}", transform=ax4.transAxes, fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'),
+                verticalalignment='top')
+        
+        plt.tight_layout()
+        if output_dir:
+            plt.savefig(os.path.join(output_dir, 'corr_vs_rmse.png'), dpi=300, bbox_inches='tight')
+        figures['corr_vs_rmse'] = fig4
+        
+        # 5. Box plot of metrics
+        metrics_long = metrics_df[['correlation', 'nse', 'r_squared']].copy()
+        
+        # Handle potential NaN values
+        metrics_long = metrics_long.fillna(0)
+        
+        # Convert to long format for boxplot
+        metrics_long = metrics_long.melt(var_name='Metric', value_name='Value')
+        
+        fig5, ax5 = plt.subplots(figsize=(10, 6))
+        sns.boxplot(data=metrics_long, x='Metric', y='Value', ax=ax5)
+        ax5.set_title('Distribution of Key Metrics', fontsize=14, fontweight='bold')
+        ax5.set_xlabel('', fontsize=12)
+        ax5.set_ylabel('Value', fontsize=12)
+        ax5.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        if output_dir:
+            plt.savefig(os.path.join(output_dir, 'metrics_boxplot.png'), dpi=300, bbox_inches='tight')
+        figures['metrics_boxplot'] = fig5
+        
+        # Close figures to free memory (if we've saved them)
+        if output_dir:
+            for fig in figures.values():
+                plt.close(fig)
+        
+        return figures
     def create_seasonal_plot(self, merged_df, site_no, site_metadata=None,
                             well_col='gw_anomaly_m', gldas_col='gldas_gws_anomaly'):
         """Create a seasonal pattern comparison plot."""

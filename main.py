@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
 # Import modules
 from src.data.usgs_data import USGSDataRetriever
@@ -21,6 +22,18 @@ def load_config(config_file):
         config = yaml.safe_load(f)
     return config
 
+def find_latest_results_dir():
+    """Find the most recently created results directory."""
+    results_dirs = glob.glob(os.path.join('results', 'run_*'))
+    
+    if not results_dirs:
+        return None
+    
+    # Sort by creation time (newest first)
+    results_dirs.sort(key=os.path.getctime, reverse=True)
+    
+    return results_dirs[0]
+
 def main():
     """Main execution function."""
     # Parse command-line arguments
@@ -32,14 +45,36 @@ def main():
                         default='all', help='Execution mode')
     parser.add_argument('--cores', type=int, default=None,
                         help='Number of cores to use (default: auto-detect)')
+    parser.add_argument('--results-dir', default=None,
+                        help='Specific results directory to use (overrides automatic selection)')
+    parser.add_argument('--fixed-dir', action='store_true',
+                        help='Use a fixed results directory name without timestamp')
     args = parser.parse_args()
 
     # Load configuration
     config = load_config(args.config)
     
-    # Create timestamped results directory
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    results_dir = os.path.join('results', f'run_{timestamp}')
+    # Determine results directory
+    if args.fixed_dir:
+        # Use a fixed directory name
+        results_dir = os.path.join('results', 'current_run')
+    elif args.results_dir:
+        # Use the provided directory
+        results_dir = args.results_dir
+    elif args.mode == 'all' or args.mode == 'download':
+        # Create a new timestamped directory for full runs or downloads
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        results_dir = os.path.join('results', f'run_{timestamp}')
+    else:
+        # For other modes, try to find the latest results directory
+        latest_dir = find_latest_results_dir()
+        
+        if latest_dir:
+            results_dir = latest_dir
+        else:
+            # If no existing directory found, create a new one
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            results_dir = os.path.join('results', f'run_{timestamp}')
     
     # Define all directories explicitly
     dirs = {
@@ -406,6 +441,10 @@ def main():
             # Print summary
             mean_lag = np.nanmean([r['optimal_lag'] for r in temporal_results])
             print(f"Mean optimal lag: {mean_lag:.1f} months")
+    
+    # Create a marker file to indicate this is the last run directory
+    with open(os.path.join(results_dir, 'last_run.marker'), 'w') as f:
+        f.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     
     print(f"\nAnalysis complete. Results saved to: {dirs['results']}")
 
